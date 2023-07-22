@@ -1,9 +1,11 @@
 defmodule Humbug.Users.User do
   use Ecto.Schema
   import Ecto.Changeset
+  alias Humbug.Discussions.Room
 
   schema "users" do
     field :name, :string
+    many_to_many :rooms, Room, join_through: "room_memberships"
 
     timestamps()
   end
