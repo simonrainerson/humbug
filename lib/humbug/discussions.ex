@@ -4,6 +4,7 @@ defmodule Humbug.Discussions do
   """
 
   import Ecto.Query, warn: false
+  alias Ecto.Multi
   alias Humbug.Repo
 
   alias Humbug.Discussions.{Room, RoomMembership}
@@ -102,7 +103,7 @@ defmodule Humbug.Discussions do
   end
 
   @doc """
-  Creates a room.
+  Creates a room with a topic Chat.
 
   ## Examples
 
@@ -114,9 +115,24 @@ defmodule Humbug.Discussions do
 
   """
   def create_room(attrs \\ %{}) do
-    %Room{}
-    |> Room.changeset(attrs)
-    |> Repo.insert()
+    Multi.new()
+    |> Multi.run(
+      :topic,
+      fn _repo, _changes -> create_topic(attrs |> Map.put(:name, "Chat")) end
+    )
+    |> Multi.run(
+      :room,
+      fn repo, %{topic: topic} ->
+        %Room{topics: [topic]}
+        |> Room.changeset(attrs)
+        |> repo.insert()
+      end
+    )
+    |> Repo.transaction()
+    |> case do
+      {:ok, changes} -> {:ok, changes.room}
+      {:error, _failed_operation, failed_value, _changes_so_far} -> {:error, failed_value}
+    end
   end
 
   @doc """
@@ -182,5 +198,140 @@ defmodule Humbug.Discussions do
   """
   def change_room(%Room{} = room, attrs \\ %{}) do
     Room.changeset(room, attrs)
+  end
+
+  alias Humbug.Discussions.Topic
+
+  @doc """
+  Returns the list of topics.
+
+  ## Examples
+
+      iex> list_topics()
+      [%Topic{}, ...]
+
+  """
+  def list_topics do
+    Repo.all(Topic)
+  end
+
+  def list_topics(nil) do
+    []
+  end
+
+  def list_topics(%Room{} = room) do
+    room
+    |> Ecto.assoc(:topics)
+    |> Repo.all()
+  end
+
+  @doc """
+  Gets a single topic.
+
+  Raises `Ecto.NoResultsError` if the Topic does not exist.
+
+  ## Examples
+
+      iex> get_topic!(123)
+      %Topic{}
+
+      iex> get_topic!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_topic!(id), do: Repo.get!(Topic, id)
+
+  @doc """
+  Find all topics with name, and if given, belonging to a room.
+  """
+  def find_topics(nil) do
+    nil
+  end
+
+  def find_topics(topic_name) do
+    Topic |> where(name: ^topic_name) |> Repo.all()
+  end
+
+  def find_topics(_, nil) do
+    []
+  end
+
+  def find_topics(nil, _) do
+    []
+  end
+
+  def find_topics(topic_name, in_room) do
+    Repo.all(
+      from topic in Topic,
+        where: topic.name == ^topic_name,
+        preload: :rooms,
+        join: room in assoc(topic, :rooms),
+        on: room.id == ^in_room.id
+    )
+  end
+
+  @doc """
+  Creates a topic.
+
+  ## Examples
+
+      iex> create_topic(%{field: value})
+      {:ok, %Topic{}}
+
+      iex> create_topic(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_topic(attrs \\ %{}) do
+    %Topic{}
+    |> Topic.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a topic.
+
+  ## Examples
+
+      iex> update_topic(topic, %{field: new_value})
+      {:ok, %Topic{}}
+
+      iex> update_topic(topic, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_topic(%Topic{} = topic, attrs) do
+    topic
+    |> Topic.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a topic.
+
+  ## Examples
+
+      iex> delete_topic(topic)
+      {:ok, %Topic{}}
+
+      iex> delete_topic(topic)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_topic(%Topic{} = topic) do
+    Repo.delete(topic)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking topic changes.
+
+  ## Examples
+
+      iex> change_topic(topic)
+      %Ecto.Changeset{data: %Topic{}}
+
+  """
+  def change_topic(%Topic{} = topic, attrs \\ %{}) do
+    Topic.changeset(topic, attrs)
   end
 end

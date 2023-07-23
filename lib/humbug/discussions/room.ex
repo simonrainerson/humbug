@@ -1,7 +1,8 @@
 defmodule Humbug.Discussions.Room do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Humbug.{Discussions.RoomMembership, Users.User}
+  alias Humbug.Discussions.{Discussion, RoomMembership, Topic}
+  alias Humbug.Users.User
 
   schema "rooms" do
     field :name, :string
@@ -9,6 +10,7 @@ defmodule Humbug.Discussions.Room do
     many_to_many(:members, User, join_through: RoomMembership)
     field :banner, :string
     field :description, :string
+    many_to_many :topics, Topic, join_through: Discussion
 
     timestamps()
   end

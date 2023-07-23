@@ -14,7 +14,7 @@ defmodule Humbug.RoomsTest do
 
     test "list_rooms/0 returns all rooms" do
       room = room_fixture()
-      assert Discussions.list_rooms() == [room]
+      assert Discussions.list_rooms() |> Repo.preload(:topics) == [room]
     end
 
     test "list_rooms_with_member/2 returns all rooms where user is member" do
@@ -27,20 +27,20 @@ defmodule Humbug.RoomsTest do
       Discussions.add_user_to_room(room3, member1)
       Discussions.add_user_to_room(room2, member2)
       Discussions.add_user_to_room(room3, member2)
-      member1_rooms = Discussions.list_rooms_with_member(member1)
-      member2_rooms = Discussions.list_rooms_with_member(member2)
-      assert member1_rooms == [room1, room3]
-      assert member2_rooms == [room2, room3]
+      member1_rooms = Discussions.list_rooms_with_member(member1) |> Enum.map(& &1.id)
+      member2_rooms = Discussions.list_rooms_with_member(member2) |> Enum.map(& &1.id)
+      assert member1_rooms == [room1.id, room3.id]
+      assert member2_rooms == [room2.id, room3.id]
     end
 
     test "list_rooms_with_owner/2 returns all rooms where user is owner" do
       owner = user_fixture()
       # seed DB with room with other owner
-      _other_room = room_fixture()
+      room_fixture()
       {:ok, my_room1} = Discussions.create_room(%{name: "room1", owner_id: owner.id})
       {:ok, my_room2} = Discussions.create_room(%{name: "room2", owner_id: owner.id})
-      rooms = Discussions.list_rooms_with_owner(owner)
-      assert rooms == [my_room1, my_room2]
+      rooms = Discussions.list_rooms_with_owner(owner) |> Enum.map(& &1.id)
+      assert rooms == [my_room1.id, my_room2.id]
     end
 
     test "list_rooms/1 returns all rooms where user is member or owner" do
@@ -48,7 +48,7 @@ defmodule Humbug.RoomsTest do
       other_room = room_fixture()
       {:ok, my_room1} = Discussions.create_room(%{name: "room1", owner_id: owner.id})
       Discussions.add_user_to_room(other_room, owner)
-      rooms = Discussions.list_rooms(owner)
+      rooms = Discussions.list_rooms(owner) |> Repo.preload(:topics)
       assert rooms == [my_room1, other_room]
     end
 
@@ -73,15 +73,15 @@ defmodule Humbug.RoomsTest do
 
     test "get_room!/1 returns the room with given id" do
       room = room_fixture()
-      assert Discussions.get_room!(room.id) == room
+      assert Discussions.get_room!(room.id) |> Repo.preload(:topics) == room
     end
 
     test "find_room/1 returns a room with the given name" do
       owner = user_fixture()
       {:ok, room1} = Discussions.create_room(%{name: "kitchen", owner_id: owner.id})
       {:ok, room2} = Discussions.create_room(%{name: "living room", owner_id: owner.id})
-      assert Discussions.find_room("kitchen") == room1
-      assert Discussions.find_room("living room") == room2
+      assert Discussions.find_room("kitchen") |> Repo.preload(:topics) == room1
+      assert Discussions.find_room("living room") |> Repo.preload(:topics) == room2
       assert is_nil(Discussions.find_room("bed room"))
     end
 
@@ -127,7 +127,7 @@ defmodule Humbug.RoomsTest do
     test "update_room/2 with invalid data returns error changeset" do
       room = room_fixture()
       assert {:error, %Ecto.Changeset{}} = Discussions.update_room(room, @invalid_attrs)
-      assert room == Discussions.get_room!(room.id)
+      assert room == Discussions.get_room!(room.id) |> Repo.preload(:topics)
     end
 
     test "delete_room/1 deletes the room" do
