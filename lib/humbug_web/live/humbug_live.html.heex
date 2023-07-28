@@ -1,0 +1,45 @@
+<HumbugWeb.CoreComponents.flash_group flash={@flash} />
+<div class="h-screen">
+  <div class="flex flex-row text-white">
+    <div class="w-48 bg-gray-600 h-screen pl-1">
+      <h1 class="font-bold text-center m-1">Rooms</h1>
+      <HumbugWeb.Components.room_list rooms={@rooms} new_room_form={@new_room_form} room={@room} />
+    </div>
+    <%= if is_nil(@room) do %>
+      <div class="bg-gray-800 flex-1 p-10">
+        <h1 class="text-5xl font-bold">Welcome to Humbug</h1>
+        <p class="text-lg pt-2">To begin select a room on the left, or create a new one!</p>
+      </div>
+    <% else %>
+      <div class="w-48 bg-gray-700 pl-1">
+        <h1 class="font-bold text-center m-1">Topics</h1>
+        <HumbugWeb.Components.topic_list
+          topics={@topics}
+          new_topic_form={@new_topic_form}
+          topic={@topic}
+        />
+      </div>
+      <div class="flex flex-col flex-1">
+        <div class="bg-gray-500 h-8">
+          <HumbugWeb.Components.edit_banner
+            banner={@room.banner || @room.name}
+            edit_banner_form={@edit_banner_form}
+          />
+        </div>
+        <div class="bg-gray-800 flex-1 p-1">messages</div>
+        <div class="bg-gray-200 text-black">chat</div>
+      </div>
+      <div class="bg-gray-700 w-64 flex-col p-2">
+        <h1 class="font-bold text-center">Room Info</h1>
+        <div>
+          <h1 class="font-bold">Description</h1>
+          <p class="pl-2"><%= @room.description %></p>
+        </div>
+        <div>
+          <h1 class="font-bold">Members</h1>
+          <ul></ul>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

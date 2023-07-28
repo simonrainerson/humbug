@@ -17,7 +17,9 @@ defmodule HumbugWeb.Router do
   scope "/", HumbugWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    live "/", HumbugLive
+    live "/:room", HumbugLive
+    live "/:room/:topic", HumbugLive
   end
 
   # Other scopes may use custom stacks.
