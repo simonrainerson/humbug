@@ -4,6 +4,10 @@ defmodule HumbugWeb.HumbugLive do
   alias Humbug.Discussions
   require Logger
 
+  @topic "topic-updates:"
+  @room "room-updates:"
+  @global "global-update:"
+
   defp reset_socket(socket) do
     socket
     |> assign(
@@ -49,9 +53,33 @@ defmodule HumbugWeb.HumbugLive do
             |> push_patch(to: "/")
 
           room ->
-            assign(socket, room: room)
+            subscribe_to_room(room)
         end
     end
+  end
+
+  defp subscribe_to_topic(%Discussions.Topic{id: topic_id}) do
+    Phoenix.PubSub.subscribe(Humbug.PubSub, @topic <> "#{topic_id}")
+  end
+
+  defp subscribe_to_room(%Discussions.Room{id: room_id}) do
+    Phoenix.PubSub.subscribe(Humbug.PubSub, @room <> "#{room_id}")
+  end
+
+  defp subsribe_to_global() do
+    Phoenix.PubSub.subscribe(Humbug.PubSub, @global)
+  end
+
+  defp broadcast_to_topic(%Discussions.Topic{id: topic_id}, message) do
+    Phoenix.PubSub.broadcast(Humbug.PubSub, @topic <> "#{topic_id}", message)
+  end
+
+  defp broadcast_to_room(%Discussions.Room{id: room_id}, message) do
+    Phoenix.PubSub.broadcast(Humbug.PubSub, @room <> "#{room_id}", message)
+  end
+
+  defp broadcast_to_global(message) do
+    Phoenix.PubSub.broadcast(Humbug.PubSub, @global, message)
   end
 
   defp assign_topic(socket, params) do
@@ -60,11 +88,14 @@ defmodule HumbugWeb.HumbugLive do
     else
       case params |> Map.get("topic") |> Discussions.find_topics(socket.assigns.room) do
         [topic | _] ->
+          subscribe_to_topic(topic)
           socket |> assign(topic: topic)
 
         _ ->
           case Discussions.find_topics("Chat", socket.assigns.room) do
             [topic | _] ->
+              subscribe_to_topic(topic)
+
               socket
               |> assign(topic: topic)
               |> push_patch(to: "/" <> socket.assigns.room.name <> "/Chat")
@@ -231,10 +262,11 @@ defmodule HumbugWeb.HumbugLive do
 
   @impl true
   def handle_event("update-banner", %{"room" => %{"banner" => banner}}, socket) do
-    socket =
+    {:noreply,
       case Discussions.update_banner(socket.assigns.room, banner) do
         {:ok, room} ->
-          socket |> assign(room: room)
+         broadcast_to_room(room, {:update, room})
+         socket
 
         {:error, %Ecto.Changeset{errors: errors}} ->
           error =
@@ -249,9 +281,7 @@ defmodule HumbugWeb.HumbugLive do
             end
 
           socket |> put_flash(:error, error)
-      end
-
-    {:noreply, socket}
+     end}
   end
 
   @impl true
@@ -259,10 +289,10 @@ defmodule HumbugWeb.HumbugLive do
     {:noreply,
      case Discussions.create_post(socket.assigns.topic, socket.assigns.user, message) do
        {:ok, post} ->
-         socket |> assign(
-          chat_form: to_form(Ecto.Changeset.change(%Discussions.Post{})),
-          posts: group_posts(post |> Humbug.Repo.preload(:author), socket.assigns.posts)
-          )
+         broadcast_to_topic(socket.assigns.topic, {:add, post})
+
+         socket
+         |> assign(chat_form: to_form(Ecto.Changeset.change(%Discussions.Post{})))
 
        {:error, %Ecto.Changeset{errors: errors}} ->
          error =
@@ -292,7 +322,19 @@ defmodule HumbugWeb.HumbugLive do
   end
 
   @impl true
-  def handle_event("change", params, socket) do
+  def handle_event("change", _params, socket) do
     {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:add, %Discussions.Post{} = post}, socket) do
+    {:noreply,
+     socket
+     |> assign(posts: group_posts(post |> Humbug.Repo.preload(:author), socket.assigns.posts))}
+  end
+
+  @impl true
+  def handle_info({:update, %Discussions.Room{} = room}, socket) do
+    {:noreply, assign(socket, room: room)}
   end
 end
