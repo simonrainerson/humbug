@@ -19,15 +19,20 @@
           topic={@topic}
         />
       </div>
-      <div class="flex flex-col flex-1">
+      <div class="flex flex-col flex-1 h-screen">
         <div class="bg-gray-500 h-8">
           <HumbugWeb.Components.edit_banner
             banner={@room.banner || @room.name}
             edit_banner_form={@edit_banner_form}
           />
         </div>
-        <div class="bg-gray-800 flex-1 p-1">messages</div>
-        <div class="bg-gray-200 text-black">chat</div>
+        <div class="bg-gray-800 flex-1 p-1 overflow-y-scroll overflow-x-hidden">
+          <HumbugWeb.Components.messages messages={@posts} />
+        </div>
+        <div class="bg-gray-200 text-black">
+        <HumbugWeb.Components.message_input
+          chat_form={@chat_form} 
+        /></div>
       </div>
       <div class="bg-gray-700 w-64 flex-col p-2">
         <h1 class="font-bold text-center">Room Info</h1>

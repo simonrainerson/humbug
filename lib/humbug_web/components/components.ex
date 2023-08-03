@@ -5,8 +5,8 @@ defmodule HumbugWeb.Components do
   @doc """
   Renders in input field.
   """
-  attr(:value, :any)
   attr(:text, :string, default: "")
+  attr(:class, :string, default: "")
 
   def text_input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
     assigns = assign(assigns, :name, field.name)
@@ -14,15 +14,19 @@ defmodule HumbugWeb.Components do
     ~H"""
     <div phx-feedback-for={@name}>
       <input
+        id={@name}
         type="text"
         name={@name}
         value={@text}
+        autocomplete="off"
         phx-blur="cancel-input"
         phx-key="Escape"
         phx-keydown="cancel-input"
+        phx-change="change"
         class={[
           "w-full text-left phx-submit-loading:opacity-75 py-2 px-3",
-          "text-sm font-semibold leading-6 text-black active:text-white/80"
+          "text-sm font-semibold leading-6 text-black active:text-white/80",
+          @class
         ]}
         autofocus
       />
@@ -159,16 +163,74 @@ defmodule HumbugWeb.Components do
       <% else %>
         <.form for={@edit_banner_form} phx-submit="update-banner" class="w-full">
           <div class="w-full">
-            <.text_input
-              type="text"
-              field={@edit_banner_form[:banner]}
-              value={@banner}
-              text={@banner}
-              class="px-4 py-0 h-8"
-            />
+            <.text_input field={@edit_banner_form[:banner]} text={@banner} class="px-4 py-0 h-8" />
           </div>
         </.form>
       <% end %>
+    </div>
+    """
+  end
+
+  @doc """
+  Renders an input field for chat messages
+  """
+  attr(:chat_form, :string)
+
+  def message_input(assigns) do
+    ~H"""
+    <.form for={@chat_form} phx-submit="post-message">
+      <.text_input field={@chat_form[:message]} text="" />
+    </.form>
+    """
+  end
+
+  @doc """
+
+  """
+  attr(:messages, :list, required: true)
+  attr(:username, :string, required: true)
+  attr(:icon, :string, default: nil)
+
+  def messages_by_user(assigns) do
+    ~H"""
+    <div class="flex flex-row">
+      <%= if !is_nil(@username) do %>
+        <div class="w-10">
+          <%= if is_nil(@icon) do %>
+            <div class="rounded-full bg-gray-900 text-yellow-800 h-10 flex justify-center items-center font-bold text-2xl">
+              <%= @username |> String.first() |> String.capitalize() %>
+            </div>
+          <% else %>
+            <img src={@icon} />
+          <% end %>
+        </div>
+      <% end %>
+      <div class="w-full">
+        <%= if !is_nil(@username) do %>
+          <div class="mx-2 text-lg underline"><%= @username %>:</div>
+        <% end %>
+        <div class="flex flex-col-reverse w-full">
+        <%= for message <- @messages do %>
+          <div class="ml-2 hover:bg-gray-900 w-full"><%= message %></div>
+        <% end %>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
+  Renders a list of messages maps, containing messages and user, with name and possibly icon.
+  """
+
+  attr(:messages, :list, default: [])
+
+  def messages(assigns) do
+    ~H"""
+    <div class="flex flex-col-reverse">
+    <%= for {author, messages} <- @messages do %>
+      <.messages_by_user messages={messages} username={author.name} icon={Map.get(author, :icon)} />
+    <% end %>
     </div>
     """
   end

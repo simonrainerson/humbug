@@ -35,59 +35,105 @@ defmodule HumbugWeb.HumbugLive do
      )}
   end
 
-  @impl true
-  def handle_params(params, _uri, socket) do
-    socket =
-      case params |> Map.get("room") do
-        nil ->
-          assign(socket, room: nil)
+  defp assign_room(socket, params) do
+    case params |> Map.get("room") do
+      nil ->
+        assign(socket, room: nil)
 
-        room_name ->
-          case Discussions.find_room(room_name) do
-            nil ->
+      room_name ->
+        case Discussions.find_room(room_name) do
+          nil ->
+            socket
+            |> assign(room: nil)
+            |> put_flash(:error, "Room " <> room_name <> " not found!")
+            |> push_patch(to: "/")
+
+          room ->
+            assign(socket, room: room)
+        end
+    end
+  end
+
+  defp assign_topic(socket, params) do
+    if is_nil(socket.assigns.room) do
+      socket
+    else
+      case params |> Map.get("topic") |> Discussions.find_topics(socket.assigns.room) do
+        [topic | _] ->
+          socket |> assign(topic: topic)
+
+        _ ->
+          case Discussions.find_topics("Chat", socket.assigns.room) do
+            [topic | _] ->
               socket
-              |> assign(room: nil)
-              |> put_flash(:error, "Room " <> room_name <> " not found!")
-              |> push_patch(to: "/")
+              |> assign(topic: topic)
+              |> push_patch(to: "/" <> socket.assigns.room.name <> "/Chat")
 
-            room ->
-              assign(socket, room: room)
+            _ ->
+              Logger.error("Error: Room " <> socket.assigns.room.name <> " has no topics")
+
+              socket
+              |> put_flash(:error, "Room" <> socket.assigns.room.name <> "has not topics")
+              |> push_patch("/")
+              |> assign(topic: nil)
           end
       end
+    end
+  end
 
-    socket =
-      if is_nil(socket.assigns.room) do
-        socket
-      else
-        case params |> Map.get("topic") |> Discussions.find_topics(socket.assigns.room) do
-          [topic | _] ->
-            socket |> assign(topic: topic)
-
-          _ ->
-            case Discussions.find_topics("Chat", socket.assigns.room) do
-              [topic | _] ->
-                socket
-                |> assign(topic: topic)
-                |> push_patch(to: "/" <> socket.assigns.room.name <> "/Chat")
-
-              _ ->
-                Logger.error("Error: Room " <> socket.assigns.room.name <> " has no topics")
-
-                socket
-                |> put_flash(:error, "Room" <> socket.assigns.room.name <> "has not topics")
-                |> push_patch("/")
-                |> assign(topic: nil)
-            end
-        end
-      end
-
+  defp assign_topics(socket) do
     topics = Discussions.list_topics(socket.assigns.room) |> Enum.map(& &1.name)
+    assign(socket, topics: topics)
+  end
 
+  defp assign_chat_form(socket) do
+    case Map.get(socket.assigns, :topic) do
+      nil -> socket
+      topic -> socket |> assign(chat_form: to_form(Ecto.Changeset.change(%Discussions.Post{})))
+    end
+  end
+
+  defp group_posts(post, []) do
+    [{post.author, [post.message]}]
+  end
+
+  defp group_posts(post, [{author, posts} | rest]) do
+    if post.author == author do
+      [{author, [post.message | posts]} | rest]
+    else
+      [{post.author, [post.message]}, {author, posts} | rest]
+    end
+  end
+
+  defp assign_posts(socket) do
+    case Map.get(socket.assigns, :topic) do
+      nil ->
+        socket
+
+      topic ->
+        assign(socket,
+          posts:
+            Discussions.list_posts(topic)
+            |> Humbug.Repo.preload(:author)
+            |> Enum.reduce(
+              [],
+              &group_posts(&1, &2)
+            )
+        )
+    end
+  end
+
+  @impl true
+  def handle_params(params, _uri, socket) do
     {
       :noreply,
       socket
       |> reset_socket
-      |> assign(topics: topics)
+      |> assign_room(params)
+      |> assign_topic(params)
+      |> assign_topics()
+      |> assign_posts()
+      |> assign_chat_form()
     }
   end
 
@@ -205,6 +251,48 @@ defmodule HumbugWeb.HumbugLive do
           socket |> put_flash(:error, error)
       end
 
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("post-message", %{"post" => %{"message" => message}}, socket) do
+    {:noreply,
+     case Discussions.create_post(socket.assigns.topic, socket.assigns.user, message) do
+       {:ok, post} ->
+         socket |> assign(
+          chat_form: to_form(Ecto.Changeset.change(%Discussions.Post{})),
+          posts: group_posts(post |> Humbug.Repo.preload(:author), socket.assigns.posts)
+          )
+
+       {:error, %Ecto.Changeset{errors: errors}} ->
+         error =
+           case errors |> Keyword.get(:message) do
+             {error, _} ->
+               error
+
+             _ ->
+               Logger.error("Post Message Error:")
+               Logger.error(errors)
+               "Internal Error"
+           end
+
+         socket |> put_flash(:error, error)
+     end}
+  end
+
+  @impl true
+  def handle_event(
+        "change",
+        %{"_target" => ["post", "message"], "post" => %{"message" => message}},
+        socket
+      ) do
+    {:noreply,
+     socket
+     |> assign(chat_form: to_form(Ecto.Changeset.change(%Discussions.Post{message: message})))}
+  end
+
+  @impl true
+  def handle_event("change", params, socket) do
     {:noreply, socket}
   end
 end
