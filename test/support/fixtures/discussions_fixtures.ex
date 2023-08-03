@@ -39,4 +39,32 @@ defmodule Humbug.DiscussionsFixtures do
 
     topic
   end
+
+  @doc """
+  Generate a post.
+  """
+  def post_fixture(attrs \\ %{}) do
+    {:ok, author} = Humbug.Users.create_user(%{name: "Sal A. Mander"})
+    room = Humbug.Repo.insert!(%Humbug.Discussions.Room{name: "Roomy", owner_id: author.id})
+
+    {:ok, topic} =
+      attrs
+      |> Enum.into(%{
+        name: "topical",
+        owner_id: author.id,
+        rooms: [room]
+      })
+      |> Humbug.Discussions.create_topic()
+
+    {:ok, post} =
+      attrs
+      |> Enum.into(%{
+        message: "some message",
+        topic_id: topic.id,
+        author_id: author.id
+      })
+      |> Humbug.Discussions.create_post()
+
+    post
+  end
 end
