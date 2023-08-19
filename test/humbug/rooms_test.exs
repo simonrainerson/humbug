@@ -43,13 +43,29 @@ defmodule Humbug.RoomsTest do
       assert rooms == [my_room1.id, my_room2.id]
     end
 
-    test "list_rooms/1 returns all rooms where user is member or owner" do
+    test "list_rooms/1 with user returns all rooms where user is member or owner" do
       owner = user_fixture()
       other_room = room_fixture()
       {:ok, my_room1} = Discussions.create_room(%{name: "room1", owner_id: owner.id})
       Discussions.add_user_to_room(other_room, owner)
       rooms = Discussions.list_rooms(owner) |> Repo.preload(:topics)
       assert rooms == [my_room1, other_room]
+    end
+
+    test "list_rooms/1 with string returns a case insentisive filtered list of rooms" do
+      room_fixture(name: "room")
+      room_fixture(name: "broom")
+      room_fixture(name: "double RoOm!")
+      room_fixture(name: "cardboard")
+      rooms = Discussions.list_rooms("room") |> Enum.map(&(&1.name))
+      assert "room" in rooms
+      assert "broom" in rooms
+      assert "double RoOm!" in rooms
+      assert "cardboard" not in rooms
+
+      # Check that empty filter returns all rooms
+      all_rooms = Discussions.list_rooms("") |> Enum.map(&(&1.name))
+      assert length(all_rooms) == 4
     end
 
     test "add_user_to_room/2 makes a user a member of a room" do

@@ -48,6 +48,13 @@ defmodule Humbug.Discussions do
     (list_rooms_with_owner(user) ++ list_rooms_with_member(user)) |> Enum.uniq()
   end
 
+  def list_rooms(text) do
+    from(room in Room,
+      where: ilike(room.name, ^"%#{text}%")
+    )
+    |> Repo.all()
+  end
+
   @doc """
   Add a user to a room, returns :ok if the user is already in the room.
   """
