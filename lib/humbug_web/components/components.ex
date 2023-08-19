@@ -3,10 +3,65 @@ defmodule HumbugWeb.Components do
   import Phoenix.HTML
 
   @doc """
+  Button with a search icon
+  """
+  attr(:click, :string)
+  attr(:color, :string, default: "gray-800")
+  attr(:hover, :string, default: "gray-800")
+
+  def search_button(assigns) do
+    ~H"""
+    <button class={"group h-8 w-8 stroke-white hover:bg-#{@hover} rounded-full"} phx-click={@click}>
+      <svg viewBox="0 0 512 512" class={"w-5 fill-#{@color} group-hover:fill-white m-auto"}>
+        <!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
+        <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z" />
+      </svg>
+    </button>
+    """
+  end
+
+  @doc """
+  Button with a pen icon
+  """
+  attr(:click, :string)
+  attr(:hover, :string, default: "gray-800")
+  attr(:color, :string, default: "gray-800")
+
+  def edit_button(assigns) do
+    ~H"""
+    <button class={"group h-8 w-8 stroke-white hover:bg-#{@hover}"} phx-click={@click}>
+      <svg viewBox="0 0 512 512" class={"w-5 fill-#{@color} group-hover:fill-white m-auto"}>
+        <!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
+        <path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L362.3 51.7l97.9 97.9 30.1-30.1c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L437.7 172.3 339.7 74.3 172.4 241.7zM96 64C43 64 0 107 0 160V416c0 53 43 96 96 96H352c53 0 96-43 96-96V320c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7-14.3 32-32 32H96c-17.7 0-32-14.3-32-32V160c0-17.7 14.3-32 32-32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H96z" />
+      </svg>
+    </button>
+    """
+  end
+
+  @doc """
+  Button for cancelling things
+  """
+  attr(:click, :string)
+  attr(:hover, :string, default: "gray-800")
+  attr(:color, :string, default: "gray-800")
+
+  def cancel_button(assigns) do
+    ~H"""
+    <button class={"group h-8 w-8 stroke-white hover:bg-#{@hover} rounded-full"} phx-click={@click}>
+      <svg viewBox="0 0 512 512" class={"w-6 fill-#{@color} group-hover:fill-white m-auto"}>
+        <!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
+        <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" />
+      </svg>
+    </button>
+    """
+  end
+
+  @doc """
   Renders in input field.
   """
   attr(:text, :string, default: "")
   attr(:class, :string, default: "")
+  attr(:blurrable, :boolean, default: true)
 
   def text_input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
     assigns = assign(assigns, :name, field.name)
@@ -19,7 +74,7 @@ defmodule HumbugWeb.Components do
         name={@name}
         value={@text}
         autocomplete="off"
-        phx-blur="cancel-input"
+        phx-blur={@blurrable && "cancel-input" || nil}
         phx-key="Escape"
         phx-keydown="cancel-input"
         phx-change="change"
@@ -35,17 +90,18 @@ defmodule HumbugWeb.Components do
   end
 
   @doc """
-  Renders a list of buttons and a button to reveal an input to create new item
+  Renders a list of buttons
   """
+  slot :inner_block
+
   attr(:item_type, :string, required: true)
   attr(:items, :list, required: true)
-  attr(:new, :string, default: nil)
   attr(:backgroundcolor, :string, default: "bg-gray-600")
   attr(:activecolor, :string, default: "bg-gray-800")
   attr(:current, :string, default: nil)
   attr(:class, :string, default: nil)
 
-  def button_list(assigns) do
+  def list(assigns) do
     ~H"""
     <ul>
       <%= for item <- @items do %>
@@ -67,28 +123,70 @@ defmodule HumbugWeb.Components do
           </button>
         </li>
       <% end %>
-      <%= if is_nil(@new) do %>
-        <li>
-          <button
-            phx-click={"new-" <> @item_type}
-            class={[
-              "w-full py-1 rounded-l-lg ",
-              "hover:font-extrabold",
-              @backgroundcolor,
-              "hover:#{@activecolor}"
-            ]}
-          >
-            Create New <%= String.capitalize(@item_type) %>
-          </button>
-        </li>
-      <% else %>
-        <li>
-          <.form for={@new} phx-submit={"create-new-" <> @item_type}>
-            <.text_input type="text" field={@new[:value]} />
-          </.form>
-        </li>
-      <% end %>
+      <%= render_slot(@inner_block) %>
     </ul>
+    """
+  end
+
+  @doc """
+  Renders a list of buttons and a button to reveal an input to create new item
+  """
+  attr(:item_type, :string, required: true)
+  attr(:items, :list, required: true)
+  attr(:new, :string, default: nil)
+  attr(:backgroundcolor, :string, default: "bg-gray-600")
+  attr(:activecolor, :string, default: "bg-gray-800")
+  attr(:current, :string, default: nil)
+  attr(:class, :string, default: nil)
+
+  def button_list(assigns) do
+    ~H"""
+    <.list
+      item_type={@item_type}
+      items={@items}
+      backgroundcolor={@backgroundcolor}
+      activecolor={@activecolor}
+      current={@current}
+      class={@class}
+    >
+      <.new_item
+        new={@new}
+        item_type={@item_type}
+        backgroundcolor={@backgroundcolor}
+        activecolor={@activecolor}
+      />
+    </.list>
+    """
+  end
+
+  @doc """
+  Button to create a new item or form to name it
+  """
+
+  attr :new, :string
+  attr :item_type, :string
+  attr :backgroundcolor, :string, default: "gray-600"
+  attr :activecolor, :string, default: "gray-800"
+
+  def new_item(assigns) do
+    ~H"""
+    <%= if is_nil(@new) do %>
+      <button
+        phx-click={"new-" <> @item_type}
+        class={[
+          "w-full py-1 rounded-l-lg ",
+          "hover:font-extrabold",
+          @backgroundcolor,
+          "hover:#{@activecolor}"
+        ]}
+      >
+        Create New <%= String.capitalize(@item_type) %>
+      </button>
+    <% else %>
+      <.form for={@new} phx-submit={"create-new-" <> @item_type}>
+        <.text_input type="text" field={@new[:value]} />
+      </.form>
+    <% end %>
     """
   end
 
@@ -107,6 +205,30 @@ defmodule HumbugWeb.Components do
       item_type="room"
       current={@room}
       new={@new_room_form}
+      backgroundcolor="bg-gray-600"
+      hovercolor={(is_nil(@room) && "hover:bg-gray-800") || "hover:bg-gray-700"}
+      activecolor={(is_nil(@room) && "bg-gray-800") || "bg-gray-700"}
+    />
+    """
+  end
+
+  @doc """
+  Render a list of room buttons filtered by search.
+  """
+
+  attr(:search_rooms, :list, required: true)
+  attr(:room, :string, default: nil)
+  attr(:search_rooms_form, :string, default: nil)
+
+  def search_room_list(assigns) do
+    ~H"""
+    <.form for={@search_rooms_form} phx-change="search_rooms" phx-submit="goto-room">
+      <.text_input field={@search_rooms_form[:text]} text="" blurrable={false} />
+    </.form>
+    <.list
+      items={@search_rooms}
+      item_type="room"
+      current={@room}
       backgroundcolor="bg-gray-600"
       hovercolor={(is_nil(@room) && "hover:bg-gray-800") || "hover:bg-gray-700"}
       activecolor={(is_nil(@room) && "bg-gray-800") || "bg-gray-700"}
@@ -149,16 +271,7 @@ defmodule HumbugWeb.Components do
           <%= raw(@banner) %>
         </p>
         <div class="ml-auto">
-          <button
-            type="image"
-            src="/images/pen-to-square-solid.svg"
-            class="group h-8 w-8 stroke-white hover:bg-gray-800"
-            phx-click="edit-banner"
-          >
-            <svg viewBox="0 0 512 512" class="w-5 fill-gray-800 group-hover:fill-white m-auto">
-              <path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L362.3 51.7l97.9 97.9 30.1-30.1c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L437.7 172.3 339.7 74.3 172.4 241.7zM96 64C43 64 0 107 0 160V416c0 53 43 96 96 96H352c53 0 96-43 96-96V320c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7-14.3 32-32 32H96c-17.7 0-32-14.3-32-32V160c0-17.7 14.3-32 32-32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H96z" />
-            </svg>
-          </button>
+          <.edit_button click="edit-banner" />
         </div>
       <% else %>
         <.form for={@edit_banner_form} phx-submit="update-banner" class="w-full">
@@ -210,9 +323,9 @@ defmodule HumbugWeb.Components do
           <div class="mx-2 text-lg underline"><%= @username %>:</div>
         <% end %>
         <div class="flex flex-col-reverse w-full">
-        <%= for message <- @messages do %>
-          <div class="ml-2 hover:bg-gray-900 w-full"><%= message %></div>
-        <% end %>
+          <%= for message <- @messages do %>
+            <div class="ml-2 hover:bg-gray-900 w-full"><%= message %></div>
+          <% end %>
         </div>
       </div>
     </div>
@@ -228,9 +341,9 @@ defmodule HumbugWeb.Components do
   def messages(assigns) do
     ~H"""
     <div class="flex flex-col-reverse">
-    <%= for {author, messages} <- @messages do %>
-      <.messages_by_user messages={messages} username={author.name} icon={Map.get(author, :icon)} />
-    <% end %>
+      <%= for {author, messages} <- @messages do %>
+        <.messages_by_user messages={messages} username={author.name} icon={Map.get(author, :icon)} />
+      <% end %>
     </div>
     """
   end

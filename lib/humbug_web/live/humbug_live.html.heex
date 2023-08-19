@@ -2,8 +2,29 @@
 <div class="h-screen">
   <div class="flex flex-row text-white">
     <div class="w-48 bg-gray-600 h-screen pl-1">
-      <h1 class="font-bold text-center m-1">Rooms</h1>
-      <HumbugWeb.Components.room_list rooms={@rooms} new_room_form={@new_room_form} room={@room} />
+      <div class="flex flex-row justify-between">
+        <div class="w-full">
+          <h1 class="font-bold text-center m-1">Rooms</h1>
+        </div>
+        <%= if is_nil(@search_rooms_form) do %>
+          <HumbugWeb.Components.search_button click="search-rooms" />
+        <% else %>
+          <HumbugWeb.Components.cancel_button click="cancel-input" />
+        <% end %>
+      </div>
+      <%= if is_nil(@search_rooms_form) do %>
+        <HumbugWeb.Components.room_list
+          rooms={@rooms}
+          new_room_form={@new_room_form}
+          room={@room}
+        />
+      <% else %>
+        <HumbugWeb.Components.search_room_list
+          search_rooms={@search_rooms}
+          room={@room}
+          search_rooms_form={@search_rooms_form}
+        />
+      <% end %>
     </div>
     <%= if is_nil(@room) do %>
       <div class="bg-gray-800 flex-1 p-10">

@@ -13,7 +13,9 @@ defmodule HumbugWeb.HumbugLive do
     |> assign(
       new_room_form: nil,
       new_topic_form: nil,
-      edit_banner_form: nil
+      edit_banner_form: nil,
+      search_rooms_form: nil,
+      search_rooms: []
     )
   end
 
@@ -264,24 +266,24 @@ defmodule HumbugWeb.HumbugLive do
   @impl true
   def handle_event("update-banner", %{"room" => %{"banner" => banner}}, socket) do
     {:noreply,
-      case Discussions.update_banner(socket.assigns.room, banner) do
-        {:ok, room} ->
+     case Discussions.update_banner(socket.assigns.room, banner) do
+       {:ok, room} ->
          broadcast_to_room(room, {:update, room})
          socket
 
-        {:error, %Ecto.Changeset{errors: errors}} ->
-          error =
-            case errors |> Keyword.get(:banner) do
-              {error, _} ->
-                error
+       {:error, %Ecto.Changeset{errors: errors}} ->
+         error =
+           case errors |> Keyword.get(:banner) do
+             {error, _} ->
+               error
 
-              _ ->
-                Logger.error("Edit Banner Error:")
-                Logger.error(errors)
-                "Internal Error"
-            end
+             _ ->
+               Logger.error("Edit Banner Error:")
+               Logger.error(errors)
+               "Internal Error"
+           end
 
-          socket |> put_flash(:error, error)
+         socket |> put_flash(:error, error)
      end}
   end
 
@@ -309,6 +311,23 @@ defmodule HumbugWeb.HumbugLive do
 
          socket |> put_flash(:error, error)
      end}
+  end
+
+  @impl true
+  def handle_event("search-rooms", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(
+       search_rooms_form:
+         to_form(Ecto.Changeset.cast({%{}, %{text: :string}}, :invalid, []), as: "SearchRooms"),
+       search_rooms: Discussions.list_rooms() |> Enum.map(& &1.name)
+     )}
+  end
+
+  @impl true
+  def handle_event("change", %{"SearchRooms" => %{"text" => text}}, socket) do
+    {:noreply,
+     socket |> assign(search_rooms: Humbug.Discussions.list_rooms(text) |> Enum.map(& &1.name))}
   end
 
   @impl true
