@@ -62,10 +62,20 @@ defmodule HumbugWeb.HumbugLive do
   end
 
   defp subscribe_to_topic(%Discussions.Topic{id: topic_id}) do
+    Humbug.PubSub
+    |> Registry.keys(self())
+    |> Enum.filter(&String.starts_with?(&1, @topic))
+    |> Enum.map(&Phoenix.PubSub.unsubscribe(Humbug.PubSub, &1))
+
     Phoenix.PubSub.subscribe(Humbug.PubSub, @topic <> "#{topic_id}")
   end
 
   defp subscribe_to_room(%Discussions.Room{id: room_id}) do
+    Humbug.PubSub
+    |> Registry.keys(self())
+    |> Enum.filter(&String.starts_with?(&1, @room))
+    |> Enum.map(&Phoenix.PubSub.unsubscribe(Humbug.PubSub, &1))
+
     Phoenix.PubSub.subscribe(Humbug.PubSub, @room <> "#{room_id}")
   end
 
