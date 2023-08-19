@@ -54,6 +54,7 @@ defmodule HumbugWeb.HumbugLive do
 
           room ->
             subscribe_to_room(room)
+            assign(socket, room: room |> Humbug.Repo.preload([:owner, :members]))
         end
     end
   end

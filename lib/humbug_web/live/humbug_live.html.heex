@@ -30,20 +30,15 @@
           <HumbugWeb.Components.messages messages={@posts} />
         </div>
         <div class="bg-gray-200 text-black">
-        <HumbugWeb.Components.message_input
-          chat_form={@chat_form} 
-        /></div>
+          <HumbugWeb.Components.message_input chat_form={@chat_form} />
+        </div>
       </div>
       <div class="bg-gray-700 w-64 flex-col p-2">
-        <h1 class="font-bold text-center">Room Info</h1>
-        <div>
-          <h1 class="font-bold">Description</h1>
-          <p class="pl-2"><%= @room.description %></p>
-        </div>
-        <div>
-          <h1 class="font-bold">Members</h1>
-          <ul></ul>
-        </div>
+        <HumbugWeb.Components.room_info
+          description={@room.description}
+          owner={@room.owner}
+          members={@room.members}
+        />
       </div>
     <% end %>
   </div>

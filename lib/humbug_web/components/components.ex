@@ -234,4 +234,31 @@ defmodule HumbugWeb.Components do
     </div>
     """
   end
+
+  @doc """
+  Renders the room info with description and members list
+  """
+
+  attr(:description, :string, default: "")
+  attr(:owner, :string)
+  attr(:members, :list, default: [])
+
+  def room_info(assigns) do
+    ~H"""
+    <h1 class="font-bold text-center">Room Info</h1>
+    <div>
+      <h1 class="font-bold">Description</h1>
+      <p class="pl-2"><%= @description %></p>
+    </div>
+    <div>
+      <h1 class="font-bold">Members</h1>
+      <ul>
+        <li><%= @owner.name %> (Owner)</li>
+        <%= for member <- @members do %>
+          <%= member.name %>
+        <% end %>
+      </ul>
+    </div>
+    """
+  end
 end
