@@ -19,6 +19,14 @@ defmodule Humbug.UsersTest do
       assert Enum.member?(all_users, user2)
     end
 
+    test "get_user_by_api_key returns the user with the given api key" do
+      user1 = user_fixture()
+      user2 = user_fixture()
+      user3 = user_fixture()
+      user = Users.get_user_by_api_key(user2.api_key)
+      assert user == user2
+    end
+
     test "get_user!/1 returns the user with given id" do
       user = user_fixture()
       assert Users.get_user!(user.id) == user

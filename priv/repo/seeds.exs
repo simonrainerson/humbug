@@ -11,9 +11,9 @@
 # and so on) as they will fail if something goes wrong.
 
 require Ecto.Query
-user1 = Humbug.Repo.insert!(%Humbug.Users.User{name: "Chip Munk"})
-user2 = Humbug.Repo.insert!(%Humbug.Users.User{name: "Corey Ander"})
-user3 = Humbug.Repo.insert!(%Humbug.Users.User{name: "Molly Kuehl"})
+{:ok, user1} = Humbug.Users.create_user(%{name: "Chip Munk"})
+{:ok, user2} = Humbug.Users.create_user(%{name: "Corey Ander"})
+{:ok, user3} = Humbug.Users.create_user(%{name: "Molly Kuehl"})
 
 {:ok, room1} =
   Humbug.Discussions.create_room(%{

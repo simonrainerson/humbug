@@ -40,6 +40,13 @@ defmodule Humbug.Users do
   def get_user!(id), do: Repo.get!(User, id)
 
   @doc """
+  Get a single user by api key
+  """
+  def get_user_by_api_key(key) do
+    User |> where(api_key: ^key) |> Repo.one()
+  end
+
+  @doc """
   Creates a user.
 
   ## Examples

@@ -23,9 +23,11 @@ defmodule HumbugWeb.Router do
   end
 
   # Other scopes may use custom stacks.
-  # scope "/api", HumbugWeb do
-  #   pipe_through :api
-  # end
+  scope "/api", HumbugWeb do
+     pipe_through :api
+
+     resources "/post", PostController, only: [:create]
+   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:humbug, :dev_routes) do
