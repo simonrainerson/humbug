@@ -92,7 +92,7 @@ defmodule HumbugWeb.Components do
   @doc """
   Renders a list of buttons
   """
-  slot :inner_block
+  slot(:inner_block)
 
   attr(:item_type, :string, required: true)
   attr(:items, :list, required: true)
@@ -123,7 +123,9 @@ defmodule HumbugWeb.Components do
           </button>
         </li>
       <% end %>
+      <li>
       <%= render_slot(@inner_block) %>
+      </li>
     </ul>
     """
   end
@@ -163,10 +165,10 @@ defmodule HumbugWeb.Components do
   Button to create a new item or form to name it
   """
 
-  attr :new, :string
-  attr :item_type, :string
-  attr :backgroundcolor, :string, default: "gray-600"
-  attr :activecolor, :string, default: "gray-800"
+  attr(:new, :string)
+  attr(:item_type, :string)
+  attr(:backgroundcolor, :string, default: "gray-600")
+  attr(:activecolor, :string, default: "gray-800")
 
   def new_item(assigns) do
     ~H"""
