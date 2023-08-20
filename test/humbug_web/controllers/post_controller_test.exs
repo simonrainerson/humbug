@@ -16,7 +16,7 @@ defmodule HumbugWeb.PostControllerTest do
   describe "create post" do
     test "renders post when data is valid", %{conn: conn} do
       topic = topic_fixture()
-      not_author = user_fixture()
+      user_fixture()
       author = user_fixture()
 
       conn =
@@ -35,11 +35,13 @@ defmodule HumbugWeb.PostControllerTest do
       conn = post(conn, ~p"/api/post", @invalid_attrs)
       assert json_response(conn, 400)["errors"] != %{}
 
-      conn = post(conn, ~p"/api/post", %{
-        "api_key" => user.api_key,
-        "topic_id" => nil,
-        "message" => "This is also bad."
-      })
+      conn =
+        post(conn, ~p"/api/post", %{
+          "api_key" => user.api_key,
+          "topic_id" => nil,
+          "message" => "This is also bad."
+        })
+
       assert json_response(conn, 422)["errors"] != %{}
     end
   end

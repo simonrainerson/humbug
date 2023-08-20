@@ -1,6 +1,5 @@
 defmodule HumbugWeb.HumbugLive do
   use Phoenix.LiveView
-  import Ecto
   alias Humbug.Discussions
   require Logger
 
@@ -118,7 +117,7 @@ defmodule HumbugWeb.HumbugLive do
 
               socket
               |> put_flash(:error, "Room" <> socket.assigns.room.name <> "has not topics")
-              |> push_patch("/")
+              |> push_patch(to: "/")
               |> assign(topic: nil)
           end
       end
@@ -133,7 +132,7 @@ defmodule HumbugWeb.HumbugLive do
   defp assign_chat_form(socket) do
     case Map.get(socket.assigns, :topic) do
       nil -> socket
-      topic -> socket |> assign(chat_form: to_form(Ecto.Changeset.change(%Discussions.Post{})))
+      _ -> socket |> assign(chat_form: to_form(Ecto.Changeset.change(%Discussions.Post{})))
     end
   end
 

@@ -67,7 +67,7 @@ defmodule HumbugWeb.Components do
     assigns = assign(assigns, :name, field.name)
 
     ~H"""
-    <div phx-feedback-for={@name}>
+    <div phx-feedback-for={@field.name}>
       <input
         id={@name}
         type="text"

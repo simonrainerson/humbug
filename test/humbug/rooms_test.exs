@@ -57,14 +57,14 @@ defmodule Humbug.RoomsTest do
       room_fixture(name: "broom")
       room_fixture(name: "double RoOm!")
       room_fixture(name: "cardboard")
-      rooms = Discussions.list_rooms("room") |> Enum.map(&(&1.name))
+      rooms = Discussions.list_rooms("room") |> Enum.map(& &1.name)
       assert "room" in rooms
       assert "broom" in rooms
       assert "double RoOm!" in rooms
       assert "cardboard" not in rooms
 
       # Check that empty filter returns all rooms
-      all_rooms = Discussions.list_rooms("") |> Enum.map(&(&1.name))
+      all_rooms = Discussions.list_rooms("") |> Enum.map(& &1.name)
       assert length(all_rooms) == 4
     end
 
