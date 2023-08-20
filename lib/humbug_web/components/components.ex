@@ -59,22 +59,21 @@ defmodule HumbugWeb.Components do
   @doc """
   Renders in input field.
   """
+  attr(:field, Phoenix.HTML.FormField)
   attr(:text, :string, default: "")
   attr(:class, :string, default: "")
   attr(:blurrable, :boolean, default: true)
 
-  def text_input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
-    assigns = assign(assigns, :name, field.name)
-
+  def text_input(assigns) do
     ~H"""
     <div phx-feedback-for={@field.name}>
       <input
-        id={@name}
+        id={@field.name}
         type="text"
-        name={@name}
+        name={@field.name}
         value={@text}
         autocomplete="off"
-        phx-blur={@blurrable && "cancel-input" || nil}
+        phx-blur={(@blurrable && "cancel-input") || nil}
         phx-key="Escape"
         phx-keydown="cancel-input"
         phx-change="change"
@@ -96,8 +95,8 @@ defmodule HumbugWeb.Components do
 
   attr(:item_type, :string, required: true)
   attr(:items, :list, required: true)
-  attr(:backgroundcolor, :string, default: "bg-gray-600")
-  attr(:activecolor, :string, default: "bg-gray-800")
+  attr(:backgroundcolor, :string, default: "gray-600")
+  attr(:activecolor, :string, default: "gray-800")
   attr(:current, :string, default: nil)
   attr(:class, :string, default: nil)
 
@@ -108,11 +107,12 @@ defmodule HumbugWeb.Components do
         <li>
           <button
             class={[
-              (!is_nil(@current) && @current.name == item && @activecolor) || @backgroundcolor
+              (!is_nil(@current) && @current.name == item && "bg-" <> @activecolor) ||
+                "bg-" <> @backgroundcolor
               | [
                   "w-full text-left h-8 my-[1px] px-2 rounded-l-lg ",
                   "hover:font-extrabold hover:py-1",
-                  "hover:#{@activecolor}",
+                  "hover:bg-#{@activecolor}",
                   @class
                 ]
             ]}
@@ -124,7 +124,7 @@ defmodule HumbugWeb.Components do
         </li>
       <% end %>
       <li>
-      <%= render_slot(@inner_block) %>
+        <%= render_slot(@inner_block) %>
       </li>
     </ul>
     """
@@ -136,8 +136,8 @@ defmodule HumbugWeb.Components do
   attr(:item_type, :string, required: true)
   attr(:items, :list, required: true)
   attr(:new, :string, default: nil)
-  attr(:backgroundcolor, :string, default: "bg-gray-600")
-  attr(:activecolor, :string, default: "bg-gray-800")
+  attr(:backgroundcolor, :string, default: "gray-600")
+  attr(:activecolor, :string, default: "gray-800")
   attr(:current, :string, default: nil)
   attr(:class, :string, default: nil)
 
@@ -178,15 +178,15 @@ defmodule HumbugWeb.Components do
         class={[
           "w-full py-1 rounded-l-lg ",
           "hover:font-extrabold",
-          @backgroundcolor,
-          "hover:#{@activecolor}"
+          "bg-" <> @backgroundcolor,
+          "hover:bg-#{@activecolor}"
         ]}
       >
         Create New <%= String.capitalize(@item_type) %>
       </button>
     <% else %>
       <.form for={@new} phx-submit={"create-new-" <> @item_type}>
-        <.text_input type="text" field={@new[:value]} />
+        <.text_input field={@new[:value]} />
       </.form>
     <% end %>
     """
@@ -207,9 +207,8 @@ defmodule HumbugWeb.Components do
       item_type="room"
       current={@room}
       new={@new_room_form}
-      backgroundcolor="bg-gray-600"
-      hovercolor={(is_nil(@room) && "hover:bg-gray-800") || "hover:bg-gray-700"}
-      activecolor={(is_nil(@room) && "bg-gray-800") || "bg-gray-700"}
+      backgroundcolor="gray-600"
+      activecolor={(is_nil(@room) && "gray-800") || "gray-700"}
     />
     """
   end
@@ -231,9 +230,8 @@ defmodule HumbugWeb.Components do
       items={@search_rooms}
       item_type="room"
       current={@room}
-      backgroundcolor="bg-gray-600"
-      hovercolor={(is_nil(@room) && "hover:bg-gray-800") || "hover:bg-gray-700"}
-      activecolor={(is_nil(@room) && "bg-gray-800") || "bg-gray-700"}
+      backgroundcolor="gray-600"
+      activecolor={(is_nil(@room) && "gray-800") || "gray-700"}
     />
     """
   end
@@ -253,8 +251,8 @@ defmodule HumbugWeb.Components do
       item_type="topic"
       new={@new_topic_form}
       current={@topic}
-      backgroundcolor="bg-gray-700"
-      activecolor="bg-gray-800"
+      backgroundcolor="gray-700"
+      activecolor="gray-800"
     />
     """
   end
