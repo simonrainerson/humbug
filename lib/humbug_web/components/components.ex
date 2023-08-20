@@ -288,12 +288,19 @@ defmodule HumbugWeb.Components do
   Renders an input field for chat messages
   """
   attr(:chat_form, :string)
+  attr(:is_member, :boolean, default: false)
 
   def message_input(assigns) do
     ~H"""
-    <.form for={@chat_form} phx-submit="post-message">
-      <.text_input field={@chat_form[:message]} text="" />
-    </.form>
+    <%= if @is_member do %>
+      <.form for={@chat_form} phx-submit="post-message">
+        <.text_input field={@chat_form[:message]} text="" />
+      </.form>
+    <% else %>
+      <button class="w-full h-10 font-bold text-xl" phx-click="join-room">
+        Join Room
+      </button>
+    <% end %>
     """
   end
 
@@ -324,7 +331,9 @@ defmodule HumbugWeb.Components do
         <% end %>
         <div class="flex flex-col-reverse w-full">
           <%= for message <- @messages do %>
-            <div class="ml-2 hover:bg-gray-900 w-full"><%= message %></div>
+            <div class="ml-2 hover:bg-gray-900 w-full">
+              <p class="break-all"><%= message %></p>
+            </div>
           <% end %>
         </div>
       </div>
@@ -365,10 +374,12 @@ defmodule HumbugWeb.Components do
     </div>
     <div>
       <h1 class="font-bold">Members</h1>
-      <ul>
+      <ul class="pl-4">
         <li><%= @owner.name %> (Owner)</li>
         <%= for member <- @members do %>
-          <%= member.name %>
+          <li>
+            <%= member.name %>
+          </li>
         <% end %>
       </ul>
     </div>

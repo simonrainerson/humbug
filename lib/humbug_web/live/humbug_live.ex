@@ -14,6 +14,7 @@ defmodule HumbugWeb.HumbugLive do
       new_topic_form: nil,
       edit_banner_form: nil,
       search_rooms_form: nil,
+      is_member: false,
       search_rooms: []
     )
   end
@@ -55,7 +56,12 @@ defmodule HumbugWeb.HumbugLive do
 
           room ->
             subscribe_to_room(room)
-            assign(socket, room: room |> Humbug.Repo.preload([:owner, :members]))
+            room = room |> Humbug.Repo.preload([:owner, :members])
+
+            assign(socket,
+              room: room,
+              is_member: socket.assigns.user in [room.owner | room.members]
+            )
         end
     end
   end
@@ -331,6 +337,24 @@ defmodule HumbugWeb.HumbugLive do
          to_form(Ecto.Changeset.cast({%{}, %{text: :string}}, :invalid, []), as: "SearchRooms"),
        search_rooms: Discussions.list_rooms() |> Enum.map(& &1.name)
      )}
+  end
+
+  @impl true
+  def handle_event("join-room", _params, %{assigns: %{room: room, user: user}} = socket) do
+    {:noreply,
+     case Discussions.add_user_to_room(room, user) do
+       {:ok, _} ->
+         broadcast_to_room(
+           room,
+           {:update, room |> Humbug.Repo.preload([:members], force: true)}
+         )
+
+         socket
+         |> assign(is_member: true)
+
+       _ ->
+         socket
+     end}
   end
 
   @impl true
