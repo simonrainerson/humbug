@@ -14,7 +14,6 @@ defmodule HumbugWeb.HumbugLive do
       new_topic_form: nil,
       edit_banner_form: nil,
       search_rooms_form: nil,
-      is_member: false,
       search_rooms: []
     )
   end
@@ -50,7 +49,7 @@ defmodule HumbugWeb.HumbugLive do
         case Discussions.find_room(room_name) do
           nil ->
             socket
-            |> assign(room: nil)
+            |> assign(room: nil, is_member: false)
             |> put_flash(:error, "Room " <> room_name <> " not found!")
             |> push_patch(to: "/")
 
